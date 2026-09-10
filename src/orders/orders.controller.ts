@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 
 //crear la interfaz para los pedidos
 interface Orders {
@@ -80,7 +80,7 @@ export class OrdersController {
     //listar por id de pedido
     @Get(':id_order')
     getOderById(@Param('id_order') id: number) {
-        const order = this.orders.find((order) => order.id_order == id);
+        const order = this.orders.find((order) => order.id_order === id);
         if (order) {
             return {
                 msg: `El pedido con id ${id} encontrado`,
@@ -91,6 +91,28 @@ export class OrdersController {
                 msg: `El pedido con id ${id} no encontrado`,
             };
         }
+    }
+
+    //RETO 2
+
+    //crear pedido
+    @Post()
+    createOrder(@Body() order: Orders){
+        this.orders.push(order);
+        return {
+            msg: 'Pedido creado exitosamente',
+            data: order
+        };
+    }
+
+    //eliminar pedido
+    @Delete(':id_order')
+    deleteOrder(@Param('id_order') id_order: number){
+        const orderPosition = this.orders.findIndex((order) => order.id_order === id_order);
+        this.orders.splice(orderPosition, 1);
+        return {
+            msg: `Pedido con id ${id_order} eliminado exitosamente`,
+        };
     }
 
 }
