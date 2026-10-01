@@ -1,68 +1,33 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, NotFoundException, Param, Patch, Post, Put } from '@nestjs/common';
+import { CreateUserDto, UpdateUserDto } from './user.dto';
+import { UsersService } from './users.service';
 
-//interfaz con nombre user
-interface User {
-    id: number;
-    name: string;
-    email: string;
-}
 
 @Controller('users')
 export class UsersController {
 
-    private users: User[] = [
-        {
-            id: 1,
-            name: 'John Doe',
-            email: 'john.doe@example.com'
-        },
-        {
-            id: 2,
-            name: 'Jane Smith',
-            email: 'jane.smith@example.com'
-        },
-        {
-            id: 3,
-            name: 'Alice Johnson',
-            email: 'alice.johnson@example.com'
-        },
-        {
-            id: 4,
-            name: 'Bob Brown',
-            email: 'bob.brown@example.com'
-        },
-        {
-            id: 5,
-            name: 'Charlie Wilson',
-            email: 'charlie.wilson@example.com'
-        }
-    ]
+    constructor(private  userService: UsersService) {
+
+    }
+
 
     //primer metodo para retornar la lista de usuarios
     @Get()
-    getUSers() {
-        return{
-            msg: 'Lista de usuarios',
-            users: this.users
-        }
+    getAllUSers() {
+        return this.userService.findAll();
     }
 
+    /**
     @Get(':id')
-    getUserById(@Param('id') id: number) {
+    getUserById(@Param('id') id: string) {
 
-        const data = this.users.find((user) => user.id == id);
+        const data = this.users.find((user) => user.id === id);
         console.log(data);
 
         if (data) {
-            return {
-                msg: `El usuario con id ${id} encontrado`,
-                data: data
-            }
+            throw new ForbiddenException(`No tienes permisos para ver el usuario con id ${id}`);
         }
-        return {
-            msg: `El usuario con id ${id} no existe o no encontrado`,
-            data: null
-        }
+        throw new NotFoundException(`El usuario con id ${id} no existe`);
     }
 
     //crear un endpoint para buscar por el nombre y retornar el correo
@@ -76,29 +41,58 @@ export class UsersController {
                 data: data
             }
         } else {
-            return {
-                msg: `El usuario ${name} no existe`,
-                data: null
-            }
+            throw new NotFoundException(`El usuario con nombre ${name} no existe`);
         }
     }
 
 
     @Post()
-    createUser(@Body() user: User){
-        console.log(user);
-        this.users.push(user);
-        return {
-            msg: 'Usuario creado correctamente',
-            data: user
+    createUser(@Body() userPayload: CreateUserDto) {
 
+        const newUSer = {
+            ...userPayload,
+            id: `${new Date().getTime()}`,
         }
+
+        this.users.push(newUSer);
+
+        return {
+            msg: "Usuario creado correctamente",
+            user: userPayload
+        }
+
+        // // validar que el correo no este vacio
+        // if (!userPayload.email) {
+        //     throw new BadRequestException(`El correo electronico no puede estar vacio`);
+        // }
+
+        // //validar que el correo tenga un formato valido
+        // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        // if (!emailRegex.test(userPayload.email)) {
+        //     throw new BadRequestException(`El correo electronico no es valido`);
+        // }
+
+
+        /**
+         * se puede validar de esta manera que el correo no este vacio
+         * if(user.email.trim() === ''){
+         *      throw new BadRequestException(`El correo electronico no puede estar vacio`);
+         * }
+         *
+         * tambien se puede validar de esta manera que el correo tenga un formato valido
+         * if(use.email.includes('@')  === false){
+         *      throw new BadRequestException(`El correo electronico no es valido`);
+         * } ){
+
+        //agregar el usuario al arreglo de usuarios
+
+
     }
 
     @Delete(':id')
-    deleteUser(@Param('id') id: number) {
-       const position = this.users.findIndex((user) => user.id === id );
-       this.users.splice(position, 1);
+    deleteUser(@Param('id') id: string) {
+        const position = this.users.findIndex((user) => user.id === id);
+        this.users.splice(position, 1);
         return {
             msg: "Usuario eliminado correctamente",
 
@@ -106,5 +100,29 @@ export class UsersController {
 
     }
 
+
+    @Put(':id')
+    updateUser(@Param('id') id: string, @Body() changes: UpdateUserDto) {
+        console.log('.:: ID usuario: ', id);
+        console.log('.:: Cambios: ', changes);
+
+        const position = this.users.findIndex((user) => user.id === id);
+        if (position === -1) {
+            throw new NotFoundException(`Usuario con ID ${id} no existe`);
+        }
+        const currentData = this.users[position];
+        const updateUser = {
+            ...currentData,
+            ...changes,
+        };
+
+        this.users[position] = updateUser;
+
+        return {
+            msg: 'Usuario actualizado',
+            data: updateUser,
+        };
+    }
+*/
 
 }
